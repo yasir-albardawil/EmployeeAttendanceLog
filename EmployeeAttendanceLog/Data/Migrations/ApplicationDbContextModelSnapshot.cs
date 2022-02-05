@@ -36,15 +36,10 @@ namespace EmployeeAttendanceLog.Data.Migrations
                     b.Property<DateTime>("CheckOut")
                         .HasColumnType("datetime2");
 
-                    b.Property<int?>("EmployeeId")
-                        .HasColumnType("int");
-
                     b.Property<string>("Justification")
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("AttendanceId");
-
-                    b.HasIndex("EmployeeId");
 
                     b.ToTable("Attendance");
                 });
@@ -61,7 +56,13 @@ namespace EmployeeAttendanceLog.Data.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("Employee");
                 });
@@ -130,6 +131,10 @@ namespace EmployeeAttendanceLog.Data.Migrations
                         .IsConcurrencyToken()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Discriminator")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Email")
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
@@ -181,6 +186,8 @@ namespace EmployeeAttendanceLog.Data.Migrations
                         .HasFilter("[NormalizedUserName] IS NOT NULL");
 
                     b.ToTable("AspNetUsers", (string)null);
+
+                    b.HasDiscriminator<string>("Discriminator").HasValue("IdentityUser");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
@@ -268,11 +275,25 @@ namespace EmployeeAttendanceLog.Data.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("EmployeeAttendanceLog.Models.Attendance", b =>
+            modelBuilder.Entity("EmployeeAttendanceLog.Models.ApplicationUser", b =>
                 {
-                    b.HasOne("EmployeeAttendanceLog.Models.Employee", null)
-                        .WithMany("Attendances")
-                        .HasForeignKey("EmployeeId");
+                    b.HasBaseType("Microsoft.AspNetCore.Identity.IdentityUser");
+
+                    b.Property<int>("IsAdmin")
+                        .HasColumnType("int");
+
+                    b.HasDiscriminator().HasValue("ApplicationUser");
+                });
+
+            modelBuilder.Entity("EmployeeAttendanceLog.Models.Employee", b =>
+                {
+                    b.HasOne("EmployeeAttendanceLog.Models.ApplicationUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -324,11 +345,6 @@ namespace EmployeeAttendanceLog.Data.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("EmployeeAttendanceLog.Models.Employee", b =>
-                {
-                    b.Navigation("Attendances");
                 });
 #pragma warning restore 612, 618
         }
